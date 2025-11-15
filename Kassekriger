@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Host System</title>
+<link rel="icon" type="image/png" href="https://images-ext-1.discordapp.net/external/nXzDLMKOdwgypACJjQPUuhLY8bD4S_8MvhWMvp1xZGo/%3Fsize%3D1024/https/cdn.discordapp.com/icons/1367843655880147104/b52d0dd4d123066929f5eabeb06739e6.png?format=webp&quality=lossless">
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #0f1724;
+    --card: #0b1220;
+    --muted: #9aa6c1;
+    --accent: #4f46e5;
+    --accent-2: #06b6d4;
+    --danger:#ef4444;
+    --glass: rgba(255,255,255,0.04);
+    --glass-2: rgba(255,255,255,0.02);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --panel-radius: 14px;
+  }
+
+  html,body{height:100%; margin:0; padding:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background: linear-gradient(180deg,#071028 0%, #071827 60%); color:#e6eef8; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+
+  .wrap{max-width:1200px; margin:28px auto; padding:22px; display:grid; grid-template-columns: 1fr 600px; gap:20px; align-items:start;}
+  header{grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px;}
+  .brand{display:flex; gap:14px; align-items:center;}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;box-shadow:0 8px 28px rgba(79,70,229,0.16);}
+  h1{margin:0;font-size:20px;}
+  .subtitle{color:var(--muted); font-size:13px; margin-top:3px;}
+
+  .card{background:linear-gradient(180deg,var(--card), #071427); border-radius:var(--panel-radius); padding:18px; box-shadow: 0 6px 20px rgba(2,6,23,0.6); border:1px solid var(--glass-2);}
+  .card h2{margin:0 0 12px 0; font-size:16px;}
+  .muted{color:var(--muted); font-size:13px;}
+
+  .controls{display:flex; gap:12px; flex-wrap:wrap;}
+  label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
+  input[type="text"], input[type="number"], textarea, select{
+    background:transparent; color: #e6eef8; border:1px solid rgba(255,255,255,0.04);
+    padding:10px 12px; border-radius:10px; outline:none; min-width:0;
+  }
+  input::placeholder{ color: rgba(230,238,248,0.35); }
+
+  button.btn{
+    background: linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:white; border:none; padding:9px 14px; border-radius:10px; cursor:pointer; font-weight:600;
+    box-shadow: 0 6px 18px rgba(79,70,229,0.12);
+  }
+  button.ghost{
+    background: rgba(255,255,255,0.03); color:var(--muted); border:1px solid rgba(255,255,255,0.03);
+    padding:9px 12px; border-radius:10px; cursor:pointer;
+  }
+  button.danger{ background: linear-gradient(90deg,#ef4444,#f97316); color:white; border:none; padding:9px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+
+  .table-wrap{ overflow:auto; max-height:1000px; border-radius:10px; }
+  table{ width:100%; border-collapse:collapse; min-width:720px; }
+  th, td{ padding:12px 10px; text-align:left; font-size:14px; color:#dbeafe; border-bottom:1px solid rgba(255,255,255,0.03); }
+  th{ font-weight:700; color:#9fb6ff; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); position:sticky; top:0; backdrop-filter: blur(4px); }
+    tr.status-0 td { background: linear-gradient(90deg, rgba(255,77,77,0.2), rgba(255,77,77,0.1)); }
+    tr.status-1 td { background: linear-gradient(90deg, rgba(255,214,51,0.2), rgba(255,214,51,0.1)); }
+    tr.status-2 td { background: linear-gradient(90deg, rgba(51,204,51,0.2), rgba(51,204,51,0.1)); }
+
+  .statusBox{ padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:700; display:inline-block; background:rgba(255,255,255,0.02); color:#e6eef8; transition:transform .12s ease; }
+  .statusBox:hover{ transform:translateY(-3px); }
+
+  .small{ font-size:13px; color:var(--muted); }
+
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat{ padding:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:10px; text-align:center; }
+  .stat b{ display:block; font-size:18px; color:#dbeafe; }
+  .legend{ font-size:13px; color:var(--muted); line-height:1.4; }
+
+  #chartContainer{ display:flex; gap:18px; align-items:center; margin-top:8px; }
+  #chartLegend{ min-width:140px; font-size:13px; color:var(--muted); line-height:1.45; }
+  canvas#statusChart{ width:150px!important; height:150px!important; background:transparent; }
+
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .footer-note{ color:var(--muted); font-size:13px; margin-top:8px; }
+
+  @media (max-width:1024px){
+    .wrap{ grid-template-columns: 1fr; padding:14px; }
+    #chartContainer{ justify-content:flex-start; }
+  }
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="brand">
+
+      <div class="logo" style="background:none; box-shadow:none;">
+        <img src="https://images-ext-1.discordapp.net/external/nXzDLMKOdwgypACJjQPUuhLY8bD4S_8MvhWMvp1xZGo/%3Fsize%3D1024/https/cdn.discordapp.com/icons/1367843655880147104/b52d0dd4d123066929f5eabeb06739e6.png?format=webp&quality=lossless" alt="Host System Logo" style="width:100%; height:100%; border-radius:12px; object-fit:cover;">
+      </div>
+
+        <div>
+          <h1>Host System</h1>
+          <div class="subtitle">Kassekrigerne</div>
+        </div>
+      </div>
+
+      <div style="text-align:right;">
+        <div class="small">Din host</div>
+        <div id="hosterTitle" style="font-weight:700; font-size:14px;">Host: Ingen valgt</div>
+      </div>
+    </header>
+
+    <section class="card" style="min-height:200px;">
+      <h2>Tilføj køb</h2>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
+        <div style="flex:1; min-width:220px;">
+          <label for="discordInput">Discord ID</label>
+          <input id="discordInput" type="text" placeholder="fx. 1035679029572927539">
+        </div>
+        <div style="width:140px;">
+          <label for="amountInput">Beløb (kr)</label>
+          <input id="amountInput" type="number" placeholder="fx. 125">
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn" onclick="addPurchase()">Tilføj køb</button>
+          <button class="ghost" onclick="setHost()">Sæt mig som host</button>
+        </div>
+      </div>
+
+      <hr style="margin:16px 0; border:none; border-top:1px solid rgba(255,255,255,0.03)">
+
+      <h2>Pris pr kasse</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input id="priceInput" type="number" placeholder="fx. 25" style="width:120px;">
+        <button class="btn" onclick="setPrice()">Sæt pris</button>
+        
+      </div>
+
+      <hr style="margin:16px 0; border:none; border-top:1px solid rgba(255,255,255,0.03)">
+
+      <h2>Købsliste</h2>
+      <div class="table-wrap" aria-live="polite">
+        <table id="dataTable" role="table" aria-label="Købsliste">
+          <thead>
+            <tr>
+              <th>Discord ID</th><th>Navn</th><th>VRP ID</th><th>Beløb</th><th>Kasser</th><th>Status</th><th>Fjern</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+        <div id="totalAmount" class="small">Total beløb: 0 kr</div>
+        <div id="totalKasser" class="small">Total kasser: –</div>
+        <div id="priceDisplay" class="small">Pris pr. kasse: 1</div>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2>Data / eksport</h2>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="actions">
+          <button class="btn" onclick="copyData()" id="copyJsonBtn">Kopiér JSON</button>
+          <button class="btn" onclick="copyDiscord()" id="copyDiscordBtn">Kopier til Discord</button>
+        </div>
+
+        <div class="actions">
+          <button class="ghost" onclick="sendNotPaid()" id="notPaidBtn">Dem der mangler at betale</button>
+          <button class="ghost" onclick="sendNotPicked()" id="notPickedBtn">Dem der mangler at afhente</button>
+          <button class="ghost" onclick="downloadData()">Download data</button>
+        </div>
+
+        <div>
+          <label for="importArea" class="small">Indsæt data (JSON)</label>
+          <textarea id="importArea" placeholder='{"103...": {"name":"Victor","id":"30","amount":125,"status":0}}' style="width:100%; height:78px; resize:vertical; background:transparent; border-radius:10px; border:1px solid rgba(255,255,255,0.03); color: #e6eef8; padding:10px;"></textarea>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn" onclick="importData()">Indsæt data</button>
+            <button class="danger" onclick="resetAll()">NULSTIL</button>
+          </div>
+        </div>
+
+        <!--<div class="footer-note small">Tip: Tøv ikke med at importere et JSON-objekt direkte fra en tidligere eksport.</div>-->
+      </div>
+
+      <hr style="margin:12px 0; border:none; border-top:1px solid rgba(255,255,255,0.03)">
+
+      <h2>Statusoversigt</h2>
+
+      <!-- Dato felter -->
+      <div style="margin-bottom:10px;">
+        <label class="small">Vælg dato</label>
+        <div style="display:flex; gap:6px;">
+          <input id="dayField" type="number" placeholder="DD" style="width:60px;" oninput="updateFullDate(); saveLocal();">
+          <input id="monthField" type="number" placeholder="MM" style="width:60px;" oninput="updateFullDate(); saveLocal();">
+          <input id="yearField" type="number" placeholder="YYYY" style="width:80px;" oninput="updateFullDate(); saveLocal();">
+        </div>
+        <input id="dateField" type="text" style="width:100%; margin-top:8px;" readonly>
+      </div>
+
+      <div id="chartContainer">
+        <div id="chartLegend" class="legend"></div>
+        <canvas id="statusChart" width="250" height="250"></canvas>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="small">Bemærk: Denne app gemmer til localStorage i din browser.</div>
+      </div>
+    </aside>
+
+  </div>
+
+<script>
+const PERSONER = {
+"1035679029572927539": { name: "Victor", vrp: "30" },
+"1003801324141416570": { name: "Karl",   vrp: "78231" },
+"529986918264602625": { name: "Jens Eriksen", vrp: "92574" },
+"912388928999403531": { name: "Ahmed Abdul", vrp: "70855" },
+"662428918745268254": { name: "Mark S", vrp: "61" },
+"217720363948310528": { name: "Mujafa", vrp: "87918" },
+"773905930303701002": { name: "Jens", vrp: "95" },
+"744538048976519169": { name: "Renzo", vrp: "61447" },
+"313706963953516549": { name: "Tony", vrp: "106" },
+"404595610642153473": { name: "Abdul", vrp: "333"}
+};
+
+let price = 1;
+let hoster_id = null;
+let host_data = {};
+let chart = null;
+
+const WEEKDAYS = ["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"];
+
+function formatFullDateFromInputs() {
+    let d = Number(document.getElementById("dayField").value);
+    let m = Number(document.getElementById("monthField").value);
+    let y = Number(document.getElementById("yearField").value);
+    if (!d || !m || !y) return "";
+    const date = new Date(y, m - 1, d);
+    if (isNaN(date.getTime())) return "";
+    const weekday = WEEKDAYS[date.getDay()];
+    const dd = ("0" + d).slice(-2);
+    const mm = ("0" + m).slice(-2);
+    const yy = String(y).slice(-2);
+    return `${weekday} ${dd}-${mm}-${yy}`;
+}
+
+function updateFullDate() {
+    const day = document.getElementById("dayField").value;
+    const month = document.getElementById("monthField").value;
+    const year = document.getElementById("yearField").value;
+
+    localStorage.setItem("dayField", day);
+    localStorage.setItem("monthField", month);
+    localStorage.setItem("yearField", year);
+
+    const formatted = formatFullDateFromInputs();
+    document.getElementById("dateField").value = formatted;
+    localStorage.setItem("reset_date", formatted);
+}
+
+function setHost(){
+    hoster_id = prompt("Indtast dit Discord ID som host:");
+    if(hoster_id){
+        document.getElementById("hosterTitle").innerText = "Host: " + hoster_id;
+        saveLocal();
+    }
+}
+
+function addPurchase(){
+    let discord = document.getElementById("discordInput").value.trim();
+    let amount = Number(document.getElementById("amountInput").value);
+    if(!discord || amount <= 0) return;
+    if(!PERSONER[discord]) return;
+    host_data[discord] = {
+        name: PERSONER[discord].name,
+        id: PERSONER[discord].vrp,
+        amount: amount,
+        status: 0
+    };
+    saveLocal();
+    render();
+}
+
+function setPrice(){
+    let v = Number(document.getElementById("priceInput").value);
+    if (!v || v <= 0) return;
+    price = v;
+    saveLocal();
+    render();
+}
+
+function cycleStatus(id){
+    host_data[id].status = (host_data[id].status + 1) % 3;
+    saveLocal();
+    render();
+}
+
+function formatKasser(k){ return Number.isInteger(k) ? k : k.toFixed(2); }
+
+function removePurchase(id){
+    delete host_data[id];
+    saveLocal();
+    render();
+}
+
+function copyData(){
+    navigator.clipboard.writeText(JSON.stringify(host_data,null,2));
+    flashButton('#copyJsonBtn');
+}
+
+function copyDiscord(){
+    let date = localStorage.getItem("reset_date");
+    if(!date){ updateFullDate(); date=localStorage.getItem("reset_date"); }
+    let text="**"+date+"**\n\n", tot=0;
+    for(let id in host_data){
+        let u = host_data[id];
+        let k = price>0?formatKasser(u.amount/price):"-";
+        let statusText=["❌ Ikke betalt","⚠️ Betalt","✅ Afhentet"][u.status];
+        tot += u.amount;
+        text += `<@${id}>\nNAVN og ID: ${u.name} - ${u.id}\nBELØB: ${u.amount}kr. (${k} Kasser)\nStatus: ${statusText}\n\n`;
+    }
+    text += `**Ialt:** ${tot}DKK\n**Stykpris:** ${price}Kr\n**Kasser ialt:** ${formatKasser(tot/price)}`;
+    navigator.clipboard.writeText(text);
+    flashButton('#copyDiscordBtn');
+}
+
+function flashButton(selector){
+    const btn=document.querySelector(selector);
+    btn.style.transform="scale(1.05)";
+    setTimeout(()=>{btn.style.transform="scale(1)";},150);
+}
+
+function render(){
+    let tbody=document.querySelector("#dataTable tbody");
+    tbody.innerHTML="";
+    let tot=0;
+    for(let id in host_data){
+        let u = host_data[id];
+        let k = price>0 ? formatKasser(u.amount/price) : "-";
+        let tr=document.createElement("tr");
+        tr.className = "status-"+u.status;
+        tr.innerHTML = `<td>${id}</td><td>${u.name}</td><td>${u.id}</td><td>${u.amount}</td><td>${k}</td><td><span class="statusBox" onclick="cycleStatus('${id}')">${["❌ Ikke betalt","⚠️ Betalt","✅ Afhentet"][u.status]}</span></td><td><button class="ghost" onclick="removePurchase('${id}')">Fjern</button></td>`;
+        tbody.appendChild(tr);
+        tot += u.amount;
+    }
+    document.getElementById("totalAmount").innerText = "Total beløb: "+tot+" kr";
+    document.getElementById("totalKasser").innerText = "Total kasser: "+(price>0?formatKasser(tot/price):"-");
+    document.getElementById("priceDisplay").innerText = "Pris pr. kasse: "+price+" kr";
+    renderChart();
+}
+
+function saveLocal(){
+    localStorage.setItem("host_data", JSON.stringify(host_data));
+    localStorage.setItem("price", price);
+    localStorage.setItem("hoster_id", hoster_id);
+}
+
+function loadLocal(){
+    const savedData = localStorage.getItem("host_data");
+    if(savedData) host_data = JSON.parse(savedData);
+    const savedPrice = localStorage.getItem("price");
+    if(savedPrice) price = Number(savedPrice);
+    const savedHost = localStorage.getItem("hoster_id");
+    if(savedHost){ hoster_id=savedHost; document.getElementById("hosterTitle").innerText="Host: "+hoster_id; }
+
+
+    const savedDay = localStorage.getItem("dayField");
+    const savedMonth = localStorage.getItem("monthField");
+    const savedYear = localStorage.getItem("yearField");
+
+    if (savedDay) document.getElementById("dayField").value = savedDay;
+    if (savedMonth) document.getElementById("monthField").value = savedMonth;
+    if (savedYear) document.getElementById("yearField").value = savedYear;
+
+    const savedDate = localStorage.getItem("reset_date");
+    if (savedDate) document.getElementById("dateField").value = savedDate;
+
+    render();
+}
+
+function resetAll() {
+    if (confirm("Er du sikker på du vil nulstille alt?")) {
+        // Ryd host data
+        host_data = {};
+        price = 1;
+        hoster_id = null;
+        document.getElementById("hosterTitle").innerText = "Host: Ingen valgt";
+
+        // Sæt dagens dato
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+
+        document.getElementById("dayField").value = dd;
+        document.getElementById("monthField").value = mm;
+        document.getElementById("yearField").value = yyyy;
+
+        const formatted = `${["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"][today.getDay()]} ${dd}-${mm}-${String(yyyy).slice(-2)}`;
+        document.getElementById("dateField").value = formatted;
+
+        // Gem i localStorage
+        localStorage.setItem("dayField", dd);
+        localStorage.setItem("monthField", mm);
+        localStorage.setItem("yearField", yyyy);
+        localStorage.setItem("reset_date", formatted);
+        localStorage.setItem("host_data", JSON.stringify(host_data));
+        localStorage.setItem("price", price);
+        localStorage.setItem("hoster_id", hoster_id);
+
+        render();
+    }
+}
+
+
+
+function importData(){
+    try{
+        const json = JSON.parse(document.getElementById("importArea").value);
+        host_data = json;
+        saveLocal();
+        render();
+    }catch(e){ alert("Ugyldigt JSON"); }
+}
+
+function downloadData(){
+    const blob = new Blob([JSON.stringify(host_data,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download="host_data.json"; a.click();
+    URL.revokeObjectURL(url);
+}
+
+
+
+function sendNotPaid() {
+    let msg = "";
+    for (let id in host_data) {
+        if (host_data[id].status === 0) { // status 0 = Ikke betalt
+            msg += `<@${id}> `;
+        }
+    }
+    if (msg) {
+        msg += "\nI mangler at betale";
+        navigator.clipboard.writeText(msg);
+        flashButton('#notPaidBtn');
+        alert("Liste kopieret til udklipsholderen!");
+    } else {
+        alert("Ingen mangler at betale.");
+    }
+}
+
+function sendNotPicked() {
+    let msg = "";
+    for (let id in host_data) {
+        const u = host_data[id];
+        if (u.status === 1) { // Betalt men ikke afhentet
+            msg += `<@${id}> `;
+        }
+    }
+    if (msg) {
+        msg += "\nI har ikke hentet skriv til mig eller kontakt mig ingame";
+        navigator.clipboard.writeText(msg).then(() => {
+            flashButton('#notPickedBtn');
+            alert("Liste kopieret til udklipsholderen!");
+        }).catch(err => {
+            console.error("Kunne ikke kopiere:", err);
+        });
+    } else {
+        alert("Ingen mangler at afhente.");
+    }
+}
+
+function renderChart(){
+    const counts = [0,0,0]; // antal personer
+    const sums   = [0,0,0]; // samlet beløb pr status
+
+    for(let id in host_data){
+        let u = host_data[id];
+        counts[u.status]++;
+        sums[u.status] += u.amount;
+    }
+
+    const data = {
+        labels:["Ikke betalt","Betalt","Afhentet"],
+        datasets:[{
+            data: sums, // diagrammet viser beløb
+            backgroundColor:["#ef4444","#f59e0b","#10b981"]
+        }]
+    };
+
+    if(chart) chart.destroy();
+    const ctx = document.getElementById("statusChart").getContext("2d");
+    chart = new Chart(ctx,{
+        type:"doughnut",
+        data:data,
+        options:{
+            plugins:{
+                legend:{ display:false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context){
+                            let statusIndex = context.dataIndex;
+                            return `${context.label}: ${context.raw} DKK (${counts[statusIndex]} personer)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    document.getElementById("chartLegend").innerHTML =
+        `❌ Ikke betalt: ${counts[0]} personer, ${sums[0]} DKK<br>` +
+        `⚠️ Betalt: ${counts[1]} personer, ${sums[1]} DKK<br>` +
+        `✅ Afhentet: ${counts[2]} personer, ${sums[2]} DKK`;
+}
+
+
+
+
+
+
+
+loadLocal();
+</script>
+
+</body>
+</html>
